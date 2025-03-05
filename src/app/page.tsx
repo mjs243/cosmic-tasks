@@ -1,101 +1,159 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import { SpaceBackground } from '@/components/cosmic/space-background';
+import { useTheme } from '@/context/theme-context';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Plus, Sun, Moon, Check, Star, MoreHorizontal } from 'lucide-react';
+import { pb } from '@/lib/pocketbase';
+
+// Sample task type
+interface Task {
+  id: string;
+  text: string;
+  completed: boolean;
+  priority: number; // 1 = low, 2 = medium, 3 = high
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const { theme, toggleTheme } = useTheme();
+  const [tasks, setTasks] = useState<Task[]>([
+    { id: '1', text: 'Design space-themed UI', completed: false, priority: 3 },
+    { id: '2', text: 'Set up PocketBase schema', completed: false, priority: 2 },
+    { id: '3', text: 'Implement drag and drop', completed: false, priority: 1 },
+    { id: '4', text: 'Create authentication flow', completed: false, priority: 2 },
+    { id: '5', text: 'Add keyboard shortcuts', completed: true, priority: 1 },
+  ]);
+  const [newTaskText, setNewTaskText] = useState('');
+  const darkMode = theme === 'dark';
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  const addTask = () => {
+    if (newTaskText.trim()) {
+      const newTask = {
+        id: Date.now().toString(),
+        text: newTaskText,
+        completed: false,
+        priority: 2 // default priority
+      };
+      setTasks([...tasks, newTask]);
+      setNewTaskText('');
+    }
+  };
+
+  const toggleComplete = (id: string) => {
+    setTasks(prevTasks => 
+      prevTasks.map(task => 
+        task.id === id ? { ...task, completed: !task.completed } : task
+      )
+    );
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      addTask();
+    }
+  };
+
+  return (
+    <div className={`min-h-screen w-full flex flex-col items-center p-6 ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-800'}`}>
+      <SpaceBackground darkMode={darkMode} />
+      
+      <div className="w-full max-w-2xl z-10">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold">Cosmic Task Orbit</h1>
+          <Button 
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+          </Button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+        
+        {/* New task input */}
+        <div className={`flex mb-6 p-3 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-white shadow-md'}`}>
+          <Input
+            type="text"
+            value={newTaskText}
+            onChange={(e) => setNewTaskText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Add a new cosmic task..."
+            className={`flex-1 mr-2 ${darkMode ? 'bg-gray-700 text-white placeholder:text-gray-400' : 'bg-gray-100 text-gray-800 placeholder:text-gray-500'}`}
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <Button onClick={addTask}>
+            <Plus size={20} />
+          </Button>
+        </div>
+        
+        {/* Priority legend */}
+        <div className="flex gap-4 mb-4 text-sm">
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-red-500 mr-1"></div>
+            <span>High Orbit</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-yellow-500 mr-1"></div>
+            <span>Medium Orbit</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-green-500 mr-1"></div>
+            <span>Low Orbit</span>
+          </div>
+        </div>
+        
+        {/* Tasks list */}
+        <div className="space-y-3">
+          {tasks.map(task => (
+            <div 
+              key={task.id}
+              className={`
+                p-4 rounded-lg flex items-center justify-between
+                transition-all duration-300 transform
+                ${task.completed ? 'opacity-60 scale-[0.98]' : 'opacity-100'}
+                ${darkMode ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white hover:bg-gray-50 shadow-md'}
+                ${task.priority === 3 ? 'border-l-4 border-red-500' : 
+                  task.priority === 2 ? 'border-l-4 border-yellow-500' : 
+                  'border-l-4 border-green-500'}
+              `}
+              style={{
+                transform: `translateX(${task.priority * 8}px)`,
+              }}
+              draggable="true"
+            >
+              <div className="flex items-center">
+                <button 
+                  onClick={() => toggleComplete(task.id)}
+                  className={`
+                    w-6 h-6 rounded-full mr-3 flex items-center justify-center
+                    ${task.completed ? 
+                      (darkMode ? 'bg-indigo-600' : 'bg-indigo-500') : 
+                      (darkMode ? 'border-2 border-gray-600' : 'border-2 border-gray-300')}
+                  `}
+                >
+                  {task.completed && <Check size={14} className="text-white" />}
+                </button>
+                <span className={task.completed ? 'line-through' : ''}>{task.text}</span>
+              </div>
+              <div className="flex items-center">
+                {task.priority === 3 && (
+                  <Star size={16} className="text-red-500 mr-2" fill="currentColor" />
+                )}
+                <button className="text-gray-400 hover:text-gray-300">
+                  <MoreHorizontal size={18} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Keyboard shortcut hint */}
+        <div className="mt-8 text-center opacity-70 text-sm">
+          <span className={`px-2 py-1 rounded ${darkMode ? 'bg-gray-800' : 'bg-gray-200'}`}>Enter</span>
+          <span className="ml-2">Add new task</span>
+        </div>
+      </div>
     </div>
   );
 }
